@@ -12,7 +12,7 @@ app.use(json());
 
 
 app.use(cors({
-    origin: "https://movie-tracker-kappa.vercel.app/",
+    origin: "https://movie-tracker-kappa.vercel.app",
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
 }));
