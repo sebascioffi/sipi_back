@@ -1,4 +1,5 @@
 import pool from '../db.js';
+import bcrypt from 'bcrypt';
 
 export const crearUsuario = async (req, res) => {
     try {
@@ -9,6 +10,10 @@ export const crearUsuario = async (req, res) => {
             return res.status(400).json({ error: 'Faltan datos necesarios o formato incorrecto' });
         }
 
+        // Hashear la contraseña antes de guardarla en la base de datos
+        const saltRounds = 10; // El número de rondas de salt, entre más alto, más seguro, pero más lento
+        const hashedPassword = await bcrypt.hash(contraseña, saltRounds);
+
         // Obtener una conexión de la pool
         const connection = await pool.promise().getConnection();
         await connection.beginTransaction();
@@ -16,7 +21,7 @@ export const crearUsuario = async (req, res) => {
         try {
             // Insertar el nuevo usuario en la tabla usuarios
             const insertUsuarioQuery = 'INSERT INTO usuarios (nom_usuario, contraseña, preguntaSeg, respuestaSeg) VALUES (?, ?, ?, ?)';
-            const usuarioInsertResult = await connection.execute(insertUsuarioQuery, [nom_usuario, contraseña, preguntaSeg, respuestaSeg]);
+            const usuarioInsertResult = await connection.execute(insertUsuarioQuery, [nom_usuario, hashedPassword, preguntaSeg, respuestaSeg]);
 
             // Insertar las plataformas asociadas en usuario_plataformas
             const insertPlataformasQuery = 'INSERT INTO usuario_plataformas (nom_usuario, plataforma_id) VALUES (?, ?)';
@@ -54,19 +59,29 @@ export const iniciarSesion = async (req, res) => {
     try {
         const connection = await pool.promise().getConnection();
         
-        // Consulta para verificar si existe el usuario y la contraseña en la tabla usuarios
-        const query = 'SELECT * FROM usuarios WHERE nom_usuario = ? AND contraseña = ?';
-        const [rows] = await connection.execute(query, [nom_usuario, contraseña]);
+        // Consulta para obtener el hash de la contraseña del usuario
+        const query = 'SELECT contraseña FROM usuarios WHERE nom_usuario = ?';
+        const [rows] = await connection.execute(query, [nom_usuario]);
 
         connection.release(); // Liberar la conexión de la pool
 
         if (rows.length === 1) {
-            // Usuario encontrado, iniciar sesión exitosa
-            res.status(200).json({ message: 'Inicio de sesión exitoso' });
-        } else {
-            // Usuario no encontrado o contraseña incorrecta
-            res.status(401).json({ error: 'Nombre de usuario o contraseña incorrectos' });
-        }
+          const hashedPassword = rows[0].contraseña;
+
+          // Comparar la contraseña ingresada con el hash almacenado
+          const isMatch = await bcrypt.compare(contraseña, hashedPassword);
+
+          if (isMatch) {
+              // Contraseña correcta
+              res.status(200).json({ message: 'Inicio de sesión exitoso' });
+          } else {
+              // Contraseña incorrecta
+              res.status(401).json({ error: 'Nombre de usuario o contraseña incorrectos' });
+          }
+      } else {
+          // Usuario no encontrado
+          res.status(401).json({ error: 'Nombre de usuario o contraseña incorrectos' });
+      }
     } catch (error) {
         console.error('Error al iniciar sesión:', error);
         res.status(500).json({ error: 'Error al iniciar sesión' });
