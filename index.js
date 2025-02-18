@@ -1,4 +1,5 @@
 import express from 'express';
+import "./database/connectdb.js"
 import cors from 'cors';
 import { json } from 'express';
 import userRouter from "./routes/user.route.js";
