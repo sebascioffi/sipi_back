@@ -90,23 +90,24 @@ export const plataformasUsuario = async (req, res) => {
   }
 
   try {
+    // Buscar todas las entradas que coincidan con el usuario en la colección 'plataformausuarios'
     const plataformas = await PlataformaUsuario.find({ nom_usuario }).select("plataforma_id");
 
-    console.log("Datos obtenidos de la base de datos:", plataformas); // Agrega esto
-
+    // Si no se encontraron plataformas, devolvemos un error 404
     if (!plataformas || plataformas.length === 0) {
       return res.status(404).json({ message: "No se encontraron plataformas para este usuario" });
     }
 
+    // Extraer solo los valores de 'plataforma_id' y devolverlos
     const plataformaIds = plataformas.map((item) => item.plataforma_id);
 
+    // Devolver la respuesta con los ids de las plataformas
     res.status(200).json({ plataformas: plataformaIds });
   } catch (error) {
     console.error("Error obteniendo plataformas del usuario:", error);
     res.status(500).json({ error: "Error al obtener las plataformas del usuario" });
   }
 };
-
 
 export const agregarFavorita = async (req, res) => {
   const { nom_usuario, pelicula_id } = req.body;
