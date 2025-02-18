@@ -86,21 +86,24 @@ export const plataformasUsuario = async (req, res) => {
   const { nom_usuario } = req.params;
 
   if (!nom_usuario) {
-    return res.status(400).json({ error: 'El nombre de usuario es requerido' });
+    return res.status(400).json({ error: "El nombre de usuario es requerido" });
   }
 
   try {
-    // Buscar el usuario en la base de datos y seleccionar solo la lista de plataformas
-    const usuario = await Usuario.findOne({ nom_usuario }).select('plataformas_usuario');
+    // Buscar todas las entradas que coincidan con el usuario
+    const plataformas = await PlataformaUsuario.find({ nom_usuario }).select("plataforma_id");
 
-    if (!usuario || !usuario.plataformas_usuario.length) {
-      return res.status(404).json({ message: 'No se encontraron plataformas para este usuario' });
+    if (plataformas.length === 0) {
+      return res.status(404).json({ message: "No se encontraron plataformas para este usuario" });
     }
 
-    res.status(200).json({ plataformas: usuario.plataformas_usuario });
+    // Extraer solo los valores de plataforma_id y devolverlos en un array
+    const plataformaIds = plataformas.map((item) => item.plataforma_id);
+
+    res.status(200).json({ plataformas: plataformaIds });
   } catch (error) {
-    console.error('Error obteniendo plataformas del usuario:', error);
-    res.status(500).json({ error: 'Error al obtener las plataformas del usuario' });
+    console.error("Error obteniendo plataformas del usuario:", error);
+    res.status(500).json({ error: "Error al obtener las plataformas del usuario" });
   }
 };
 
