@@ -90,6 +90,12 @@ export const plataformasUsuario = async (req, res) => {
   }
 
   try {
+    // Acceder al modelo 'PlataformaUsuario' usando mongoose.model
+    const PlataformaUsuario = mongoose.model('PlataformaUsuario', new mongoose.Schema({
+      nom_usuario: { type: String, required: true },
+      plataforma_id: { type: String, required: true },
+    }), 'plataformausuarios');
+
     // Buscar todas las entradas que coincidan con el usuario en la colección 'plataformausuarios'
     const plataformas = await PlataformaUsuario.find({ nom_usuario }).select("plataforma_id");
 
