@@ -1,7 +1,8 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 import Usuario from '../models/Usuario.js';
-import PlataformaUsuario from '../models/PlataformaUsuario.js';
+import Plataformausuario from '../models/Plataformausuario.js';
+
 
 export const crearUsuario = async (req, res) => {
   const session = await mongoose.startSession(); // Iniciar sesión para transacción
@@ -35,7 +36,7 @@ export const crearUsuario = async (req, res) => {
       plataforma_id
     }));
 
-    await PlataformaUsuario.insertMany(plataformas, { session });
+    await Plataformausuario.insertMany(plataformas, { session });
 
     // Confirmar la transacción
     await session.commitTransaction();
@@ -91,7 +92,7 @@ export const plataformasUsuario = async (req, res) => {
 
   try {
     // Buscar todas las entradas que coincidan con el usuario en la colección 'plataformausuarios'
-    const plataformas = await PlataformaUsuario.find({ nom_usuario }).select("plataforma_id");
+    const plataformas = await Plataformausuario.find({ nom_usuario }).select("plataforma_id");
 
     // Si no se encontraron plataformas, devolvemos un error 404
     if (!plataformas || plataformas.length === 0) {
@@ -155,19 +156,19 @@ export const agregarPendiente = async (req, res) => {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
 
-    // Verificar si la película ya está en la lista de pendientes
+    // Verificar si la película ya está en la lista de favoritas
     if (usuario.pendientes.includes(pelicula_id)) {
       return res.status(400).json({ error: 'La película ya está en la lista de pendientes' });
     }
 
-    // Agregar la película a la lista de pendientes
+    // Agregar la película a la lista de favoritas
     usuario.pendientes.push(pelicula_id);
     await usuario.save();
 
-    res.status(201).json({ message: 'Película pendiente agregada exitosamente' });
+    res.status(201).json({ message: 'Película favorita agregada exitosamente' });
   } catch (error) {
-    console.error('Error agregando película pendiente:', error);
-    res.status(500).json({ error: 'Error al agregar la película pendiente' });
+    console.error('Error agregando película favorita:', error);
+    res.status(500).json({ error: 'Error al agregar la película favorita' });
   }
 };
 
@@ -262,61 +263,46 @@ export const obtenerUltimaFavorita = async (req, res) => {
 };
 
 export const eliminarFavorita = async (req, res) => {
-  const { pelicula_id } = req.params;
+  const { nom_usuario, pelicula_id } = req.params;
 
   try {
-    // Buscar al usuario en la base de datos
-    const usuario = await Usuario.findOne({ 'favoritas': pelicula_id });
+    // Buscar y actualizar al usuario eliminando la película de favoritas
+    const usuario = await Usuario.findOneAndUpdate(
+      { nom_usuario },
+      { $pull: { favoritas: pelicula_id } }, // Elimina la película de favoritas
+      { new: true }
+    );
 
     if (!usuario) {
-      return res.status(404).json({ message: 'Usuario no encontrado o la película no está en las favoritas' });
+      return res.status(404).json({ message: "Usuario no encontrado o la película no está en las favoritas" });
     }
 
-    // Eliminar la película de las favoritas
-    const index = usuario.favoritas.indexOf(pelicula_id);
-    if (index === -1) {
-      return res.status(404).json({ message: 'Película no encontrada en las favoritas' });
-    }
-
-    // Eliminar la película del array
-    usuario.favoritas.splice(index, 1);
-
-    // Guardar los cambios en la base de datos
-    await usuario.save();
-
-    res.status(200).json({ message: 'Película eliminada exitosamente de las favoritas' });
+    res.status(200).json({ message: "Película eliminada exitosamente de las favoritas" });
   } catch (error) {
-    console.error('Error eliminando la película favorita:', error);
-    res.status(500).json({ message: 'Error eliminando la película favorita' });
+    console.error("Error eliminando la película favorita:", error);
+    res.status(500).json({ message: "Error eliminando la película favorita" });
   }
 };
 
 export const eliminarPendiente = async (req, res) => {
-  const { pelicula_id } = req.params;
+  const { nom_usuario, pelicula_id } = req.params;
 
   try {
-    // Buscar al usuario que tiene la película pendiente
-    const usuario = await Usuario.findOne({ 'pendientes': pelicula_id });
+    // Buscar y actualizar al usuario eliminando la película de pendientes
+    const usuario = await Usuario.findOneAndUpdate(
+      { nom_usuario },
+      { $pull: { pendientes: pelicula_id } }, // Elimina la película de pendientes
+      { new: true }
+    );
 
     if (!usuario) {
-      return res.status(404).json({ message: 'Usuario no encontrado o la película no está en los pendientes' });
+      return res.status(404).json({ message: "Usuario no encontrado o la película no está en los pendientes" });
     }
 
-    // Eliminar la película de los pendientes
-    const index = usuario.pendientes.indexOf(pelicula_id);
-    if (index === -1) {
-      return res.status(404).json({ message: 'Película no encontrada en los pendientes' });
-    }
-
-    // Eliminar la película del array de pendientes
-    usuario.pendientes.splice(index, 1);
-
-    // Guardar los cambios en la base de datos
-    await usuario.save();
-
-    res.status(200).json({ message: 'Película eliminada exitosamente de los pendientes' });
+    res.status(200).json({ message: "Película eliminada exitosamente de los pendientes" });
   } catch (error) {
-    console.error('Error eliminando la película pendiente:', error);
-    res.status(500).json({ message: 'Error eliminando la película pendiente' });
+    console.error("Error eliminando la película pendiente:", error);
+    res.status(500).json({ message: "Error eliminando la película pendiente" });
   }
 };
+

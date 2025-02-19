@@ -8,6 +8,8 @@ const UsuarioSchema = new mongoose.Schema({
     contraseña: { type: String, required: true },
     preguntaSeg: { type: String, required: true },
     respuestaSeg: { type: String, required: true },
+    favoritas: { type: [String], default: [] },
+    pendientes: { type: [String], default: [] },
     grupos: [
         {
             nombre_grupo: String,

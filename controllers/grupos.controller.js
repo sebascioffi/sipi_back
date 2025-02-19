@@ -1,7 +1,8 @@
+import Grupo from '../models/Grupo.js';
 import Usuario from '../models/Usuario.js';
 
 export const crearGrupo = async (req, res) => {
-    const { nom_usuario, nombre_grupo } = req.body;
+    const { nom_usuario, nombre_grupo } = req.params;
 
     try {
         // Verificar si ya existe un grupo con el mismo nombre
@@ -16,7 +17,7 @@ export const crearGrupo = async (req, res) => {
         await nuevoGrupo.save();
 
         // Buscar al usuario por nombre
-        const usuario = await Usuario.findOne({ nombre_usuario: nom_usuario });
+        const usuario = await Usuario.findOne({ nom_usuario });
         if (!usuario) {
             return res.status(404).json({ message: 'Usuario no encontrado' });
         }
@@ -32,6 +33,51 @@ export const crearGrupo = async (req, res) => {
     }
 };
 
+export const obtenerGruposUsuario = async (req, res) => {
+    const { nom_usuario } = req.params; // Obtener el nombre del usuario de los parámetros de la solicitud
+
+    try {
+        // Buscar al usuario en la base de datos
+        const usuario = await Usuario.findOne({ nom_usuario }); // Asegúrate de que el campo que usas para buscar sea el correcto
+
+        if (!usuario) {
+            return res.status(404).json({ message: 'Usuario no encontrado' }); // Manejo de errores si el usuario no existe
+        }
+
+        // Extraer los nombres de los grupos
+        const gruposNombres = usuario.grupos.map(grupo => grupo.nombre_grupo);
+
+        // Devolver los nombres de los grupos
+        return res.status(200).json({ grupos: gruposNombres }); // Retorna el array de nombres de grupos
+    } catch (error) {
+        console.error('Error al obtener los grupos del usuario:', error); // Log del error
+        return res.status(500).json({ message: 'Error al obtener los grupos del usuario' }); // Manejo de errores en el servidor
+    }
+};
+
+export const obtenerUsuariosGrupo = async (req, res) => {
+    const { nombre_grupo } = req.params;
+
+    try {
+        // Buscar los usuarios que pertenecen al grupo específico
+        const usuarios = await Usuario.find({ 'grupos.nombre_grupo': nombre_grupo });
+
+        // Comprobar si se encontraron usuarios
+        if (!usuarios || usuarios.length === 0) {
+            return res.status(404).json({ message: 'No se encontraron usuarios en este grupo' });
+        }
+
+        // Extraer los nombres de los usuarios
+        const nombresUsuarios = usuarios.map(usuario => usuario.nom_usuario); // Asegúrate de que 'nombre_usuario' sea el campo correcto
+
+        // Devolver los nombres de los usuarios
+        return res.status(200).json({ usuarios: nombresUsuarios });
+    } catch (error) {
+        console.error('Error al obtener usuarios del grupo:', error);
+        return res.status(500).json({ message: 'Error al obtener usuarios del grupo' });
+    }
+};
+
 export const unirseAGrupo = async (req, res) => {
     const { nom_usuario, nombre_grupo } = req.params;
 
@@ -44,7 +90,7 @@ export const unirseAGrupo = async (req, res) => {
         }
 
         // Verificar si el usuario ya está en el grupo
-        const usuario = await Usuario.findOne({ nombre_usuario: nom_usuario });
+        const usuario = await Usuario.findOne({ nom_usuario });
 
         if (!usuario) {
             return res.status(404).json({ message: 'Usuario no encontrado' });
@@ -65,50 +111,5 @@ export const unirseAGrupo = async (req, res) => {
     } catch (error) {
         console.error('Error al unirse al grupo:', error);
         return res.status(500).json({ message: 'Hubo un problema al unirse al grupo' });
-    }
-};
-
-export const obtenerGruposUsuario = async (req, res) => {
-    const { nom_usuario } = req.params;
-
-    try {
-        // Obtener el usuario por su nombre de usuario
-        const usuario = await Usuario.findOne({ nombre_usuario: nom_usuario }).populate('grupos.grupo_id', 'nombre');
-
-        if (!usuario) {
-            return res.status(404).json({ message: 'Usuario no encontrado' });
-        }
-
-        // Extraer los nombres de grupo de los resultados
-        const grupos = usuario.grupos.map(grupo => grupo.nombre_grupo);
-
-        return res.status(200).json({ grupos });
-    } catch (error) {
-        console.error('Error al obtener los grupos del usuario:', error);
-        return res.status(500).json({ message: 'Hubo un problema al obtener los grupos del usuario' });
-    }
-};
-
-export const obtenerUsuariosGrupo = async (req, res) => {
-    const { nombre_grupo } = req.params;
-
-    try {
-        // Consultar el grupo por nombre
-        const grupo = await Grupo.findOne({ nombre: nombre_grupo });
-
-        if (!grupo) {
-            return res.status(404).json({ message: 'Grupo no encontrado' });
-        }
-
-        // Obtener todos los usuarios que pertenecen a este grupo
-        const usuarios = await Usuario.find({ 'grupos.nombre_grupo': nombre_grupo }).select('nombre_usuario');
-
-        // Extraer los nombres de usuario de los resultados
-        const nombresUsuarios = usuarios.map(usuario => usuario.nombre_usuario);
-
-        return res.status(200).json({ usuarios: nombresUsuarios });
-    } catch (error) {
-        console.error('Error al obtener los usuarios del grupo:', error);
-        return res.status(500).json({ message: 'Hubo un problema al obtener los usuarios del grupo' });
     }
 };

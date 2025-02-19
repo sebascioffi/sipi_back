@@ -1,11 +1,12 @@
 import mongoose from 'mongoose';
 
-const plataformaUsuarioSchema = new mongoose.Schema({
+// Seleccionar la base de datos específica 'movietracker'
+const db = mongoose.connection.useDb('movietracker');
+
+const PlataformausuarioSchema = new mongoose.Schema({
     nom_usuario: { type: String, required: true },
     plataforma_id: { type: String, required: true },
 });
 
-// Especificamos la colección como 'plataformausuarios'
-const PlataformaUsuario = mongoose.model('PlataformaUsuario', plataformaUsuarioSchema, 'plataformausuarios');
-
-export default PlataformaUsuario;
+// Crear el modelo en la base de datos 'movietracker'
+export default db.model('Plataformausuario', PlataformausuarioSchema);

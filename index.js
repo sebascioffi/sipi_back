@@ -3,14 +3,13 @@ import "./database/connectdb.js"
 import cors from 'cors';
 import { json } from 'express';
 import userRouter from "./routes/user.route.js";
-import gruposRouter from "./routes/grupos.route.js"
+import gruposRouter from "./routes/grupos.route.js";
 
 const app = express();
 const port = process.env.PORT || 8080;
 
 // Middleware para parsear el cuerpo de las solicitudes como JSON
 app.use(json());
-
 
 app.use(cors({
     origin: "https://movie-tracker-kappa.vercel.app",

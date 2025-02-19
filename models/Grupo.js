@@ -11,4 +11,5 @@ const GrupoSchema = new mongoose.Schema({
     },
 });
 
+// Crear el modelo en la base de datos 'movietracker'
 export default db.model('Grupo', GrupoSchema);
